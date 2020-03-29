@@ -355,6 +355,25 @@ class ModelCatalogProduct extends Model {
 		return $query->row;
 	}
 
+	public function getProductByEan($product_ean){
+		$query = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE ean = '" . (int)$product_ean . "'");
+		if($query->row){
+			$product_id = $query->row['product_id'];
+			$product_data = $this->db->query("SELECT DISTINCT * FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE p.product_id = '" . (int)$product_id . "' AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+			$product_name = $product_data->row['name'];
+		} else {
+			$product_id = NULL;
+			$product_name = NULL;
+		}
+
+		$product_data = array(
+			'product_id' => $product_id,
+			'product_name' => $product_name
+		);
+
+		return $product_data;
+	}
+
 	public function getProducts($data = array()) {
 		$sql = "SELECT * FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
 

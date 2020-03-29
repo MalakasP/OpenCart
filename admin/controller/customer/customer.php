@@ -1388,6 +1388,178 @@ class ControllerCustomerCustomer extends Controller {
 		$this->response->setOutput($this->load->view('customer/customer_ip', $data));
 	}
 
+	public function import() {
+		$this->load->language('customer/customer');
+
+		$this->load->model('customer/customer');
+
+		if (isset($this->request->get['page'])) {
+			$page = $this->request->get['page'];
+		} else {
+			$page = 1;
+		}
+
+		$data['imports'] = array();
+
+		$results = $this->model_customer_customer->getImport($this->request->get['customer_id'], ($page - 1) * 10, 10);
+
+		$this->load->model('catalog/product');
+
+		foreach ($results as $result) {
+			$product_data = $this->model_catalog_product->getProductByEan($result['ean']);
+			if(isset($product_data['product_id'])){
+				$data['imports'][] = array(
+					'product_id'		=> $product_data['product_id'],
+					'product_name' 		=> $product_data['product_name'],
+					'product_code' 		=> $result['ean'],
+					'product_price' 	=> $result['price'],
+					'imp_product_id'	=> $result['id'],
+					'date_added' 	=> date('d/m/y H:i:s', strtotime($result['date_added']))
+				);
+			}
+		}
+
+		$this->load->model('customer/customer');
+
+		$imports_total = $this->model_customer_customer->getTotalImports($this->request->get['customer_id']);
+
+		$pagination = new Pagination();
+		$pagination->total = $imports_total;
+		$pagination->page = $page;
+		$pagination->limit = 10;
+		$pagination->url = $this->url->link('customer/customer/import', 'user_token=' . $this->session->data['user_token'] . '&customer_id=' . $this->request->get['customer_id'] . '&page={page}', true);
+
+		$data['pagination'] = $pagination->render();
+
+		$data['results'] = sprintf($this->language->get('text_pagination'), ($imports_total) ? (($page - 1) * 10) + 1 : 0, ((($page - 1) * 10) > ($imports_total - 10)) ? $imports_total : ((($page - 1) * 10) + 10), $imports_total, ceil($imports_total / 10));
+		
+		$data['customer_id'] = $this->request->get['customer_id'];
+
+		$data['user_token'] = $this->session->data['user_token'];
+
+		$this->response->setOutput($this->load->view('customer/customer_import', $data));
+	}
+
+	public function editImport(){
+		$this->load->language('customer/customer');
+
+		$this->load->model('customer/customer');
+		
+		$data = array();
+
+		if (!$this->user->hasPermission('modify', 'customer/customer')) {
+		} else {
+			$product_info = $this->model_customer_customer->getImportedProduct($this->request->get['product_id']);
+
+			$data['ean'] = $product_info['ean'];
+			$data['price'] = $product_info['price'];
+			$data['id'] = $product_info['id'];
+
+			$this->load->model('catalog/product');
+
+			$product_data = $this->model_catalog_product->getProductByEan($data['ean']);
+
+			$data['name'] = $product_data['product_name'];
+		}
+
+		$data['customer_id'] = $this->request->get['customer_id'];
+
+		$data['user_token'] = $this->session->data['user_token'];
+		
+		$this->response->setOutput($this->load->view('customer/customer_edit_import', $data));
+	}
+
+	public function updateImport(){
+		$this->load->language('customer/customer');
+
+		$json = array();
+
+		if (!$this->user->hasPermission('modify', 'customer/customer')) {
+			$json['error'] = $this->language->get('error_permission');
+		} else {
+			if (isset($this->request->post["ean"]) && isset($this->request->post["price"])){
+				$ean = $this->request->post['ean'];
+				$price = $this->request->post['price'];
+
+				$this->load->model('user/user');
+
+				$user_info = $this->model_user_user->getUser($this->user->getId());
+				$username  = $user_info['username'];				
+				
+				$this->load->model('customer/customer');
+				
+				$this->model_customer_customer->updateImport($this->request->get['product_id'], $ean, $price, $username);
+
+				$json['success'] = $this->language->get('text_success');
+			}
+		}
+
+		$this->response->addHeader('Content-Type: application/json');
+		$this->response->setOutput(json_encode($json));
+	}
+
+	public function deleteImport(){
+		$this->load->language('customer/customer');
+
+		$this->load->model('customer/customer');
+
+		$json = array();
+
+		if (!$this->user->hasPermission('modify', 'customer/customer')) {
+			$json['error'] = $this->language->get('error_permission');
+		} else {
+			if(isset($this->request->post['ean'])){
+				$this->model_customer_customer->deleteImport($this->request->get['customer_id'], $this->request->post['ean']);
+			}
+			$json['success'] = $this->language->get('text_success');
+		}
+
+		$this->response->addHeader('Content-Type: application/json');
+		$this->response->setOutput(json_encode($json));
+	}
+
+
+	public function addImport(){
+		$this->load->language('customer/customer');
+
+		$json = array();
+		 
+		if (!$this->user->hasPermission('modify', 'customer/customer')) {
+			$json['error'] = $this->language->get('error_permission');
+		} else {
+			$this->load->model('user/user');
+
+			$user_info = $this->model_user_user->getUser($this->user->getId());
+			$username  = $user_info['username'];
+
+			$this->load->model('customer/customer');
+
+			$this->model_customer_customer->deleteImports($this->request->get['customer_id']);
+
+			if (isset($this->request->post["products_data"])){
+				$products = $this->request->post["products_data"];
+				$products = html_entity_decode($products);
+				$products = json_decode($products, true);
+			} else {
+				$products = array();				
+			}
+
+			foreach ($products as $product){
+				$this->load->model('catalog/product');
+				$product_data = $this->model_catalog_product->getProductByEan($product['ean']);	
+				if(isset($product_data['product_id'])){
+					$this->load->model('customer/customer');
+					$this->model_customer_customer->addImport($this->request->get['customer_id'], $username, $product);
+				}
+			}
+
+			$json['success'] = $this->language->get('text_success');
+		}
+
+		$this->response->addHeader('Content-Type: application/json');
+		$this->response->setOutput(json_encode($json));
+	}
+
 	public function autocomplete() {
 		$json = array();
 

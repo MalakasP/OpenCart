@@ -276,7 +276,15 @@ class ControllerProductProduct extends Controller {
 			}
 
 			if ($this->customer->isLogged() || !$this->config->get('config_customer_price')) {
-				$data['price'] = $this->currency->format($this->tax->calculate($product_info['price'], $product_info['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+				$customer_id = $this->customer->getId();
+				if(isset($product_info['ean'])){
+					$imported_price = $this->model_catalog_product->getImportedProduct($customer_id, $product_info['ean']);
+					if(isset($imported_price)){
+						$price = $this->currency->format($this->tax->calculate($imported_price['price'], $product_info['tax_class_id'], $this->config->get('config_tax') ? 'P' : false), $this->session->data['currency']);
+						$data['price'] = $price;
+						$product_info['price'] = $imported_price['price'];
+					}
+				}
 			} else {
 				$data['price'] = false;
 			}
@@ -421,6 +429,18 @@ class ControllerProductProduct extends Controller {
 					'href'        => $this->url->link('product/product', 'product_id=' . $result['product_id'])
 				);
 			}
+			//$this->load->model('catalog/product');
+
+			// if($this->customer->isLogged()){
+			// 	$customer_id = $this->customer->getId();
+			// 	if(isset($product_info['ean'])){
+			// 		$price = $this->model_catalog_product->getImportedProduct($customer_id, $product_info['ean']);
+			// 		if(isset($price)){
+			// 			//$data['price'] = $price['price'];
+			// 		}
+			// 	}
+			// }
+			
 
 			$data['tags'] = array();
 

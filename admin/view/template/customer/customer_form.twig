@@ -32,6 +32,7 @@
             <li><a href="#tab-transaction" data-toggle="tab">{{ tab_transaction }}</a></li>
             <li><a href="#tab-reward" data-toggle="tab">{{ tab_reward }}</a></li>
             <li><a href="#tab-ip" data-toggle="tab">{{ tab_ip }}</a></li>
+            <li><a href="#tab-import" data-toggle="tab">{{ tab_import }}</a></li> 
             {% endif %}
           </ul>
           <div class="tab-content">
@@ -886,6 +887,16 @@
                 <div id="ip"></div>
               </fieldset>
             </div>
+            <div class="tab-pane" id="tab-import">
+              <fieldset>
+                <legend>{{ text_import }} <strong>({{ firstname }} {{ lastname }})</strong></legend>
+                <div id="import_button">
+                <input type="file" name="real-file" style="display:none" id="real-file" onchange="handleFile(this);"/>
+                <button type="button" onclick="selectFile();" id="button-import" data-loading-text="{{ text_loading }}" class="btn btn-primary"><i class="fa fa-save"></i> {{ button_select_csv }}</button>
+                </div><br>
+                <div id="import"></div>
+              </fieldset>
+            </div>
           </div>
         </form>
       </div>
@@ -931,6 +942,7 @@
   $('select[name=\'customer_group_id\']').trigger('change');
   //--></script> 
   <script type="text/javascript"><!--
+
   var address_row = {{ address_row }};
 
   function addAddress() {
@@ -1331,6 +1343,16 @@
 
   $('#ip').load('index.php?route=customer/customer/ip&user_token={{ user_token }}&customer_id={{ customer_id }}');
 
+
+  $('#import').delegate('.pagination a', 'click', function(e) {
+    e.preventDefault();
+
+    $('#import').load(this.href);
+  });
+
+  $('#import').load('index.php?route=customer/customer/import&user_token={{ user_token }}&customer_id={{ customer_id }}');
+
+
   $('#content').delegate('button[id^=\'button-custom-field\'], button[id^=\'button-address\']', 'click', function() {
     var node = this;
 
@@ -1457,5 +1479,113 @@
 
   $('input[name=\'payment\']:checked').trigger('change');
   //--></script> 
+
+  <script type="text/javascript"><!--
+  function selectFile() {
+    document.getElementById("real-file").click();
+  }
+
+  function handleFile(sender) {
+    var validExts = ".csv";
+    var fileExt = sender.value;
+    fileExt = fileExt.substring(fileExt.lastIndexOf('.'));
+    if (validExts.indexOf(fileExt) < 0) {
+      alert("Invalid file selected, valid files are of " +
+               validExts.toString() + " type");
+      return false;
+    }
+    else
+      importedFile = document.getElementById("real-file").files[0],
+      console.log(importedFile);
+      if(window.FileReader){
+        getAsText(importedFile)
+      }
+      return true;
+  }
+
+  function getAsText(file){
+    let reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = loadHandler;
+    reader.onerror = errorHandler;
+  }
+
+  function loadHandler(event){
+    let csv = event.target.result;
+    processData(csv);
+  }
+
+  function errorHandler(event){
+    if(event.target.error.name == "NotReadableError"){
+      alert('Cannot read file!');
+    }
+  }
+
+  function processData(csv){
+    var product_data = '[';
+
+    let allText = csv.split(/\r?\n|\r/);
+    for(let count = 0; count < allText.length; count++){
+      let row = allText[count].split(",");
+
+      for(let row_count = 0; row_count < row.length; row_count++){
+        if(count !== 0)
+        {
+          if (row_count == 0){
+            if (row[row_count]){
+              product_data += '{ \"ean\": ' + row[row_count]  + ', ';
+            } else {
+              break;
+            }
+          } else {
+            if (row[row_count]){
+              product_data += '\"price\": ' + row[row_count] + '},';
+            } else {
+              product_data += '\"price\": ' + 0 + '},';
+            }
+          }
+        }
+      }
+    }
+    product_data = product_data.substring(0, product_data.length - 1);
+    product_data = product_data + ']';   
+    sendDataToCtrl(product_data);
+  }
+
+  function sendDataToCtrl(product_data){
+    var products = JSON.parse(product_data);
+    products = JSON.stringify(products);
+
+    $.ajax({
+      url: 'index.php?route=customer/customer/addImport&user_token={{ user_token }}&customer_id={{ customer_id }}',
+      type: 'post',
+      data: { "products_data" :products },
+      beforeSend: function() {
+        $('#button-import').button('loading');
+      },
+      complete: function() {
+        $('#button-import').button('reset');
+      },
+      success: function(json) {
+        $('.alert-dismissible').remove();
+        if (json['error']) {
+          $('#tab-import').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+          console.log(json['error'])
+        }
+
+        if (json['success']) {
+          console.log(json['success'])
+          $('#tab-import').prepend('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+          $('#import').load('index.php?route=customer/customer/import&user_token={{ user_token }}&customer_id={{ customer_id }}');
+        }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+          alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+        }
+      });
+  }
+
+  //--></script>
 </div>
 {{ footer }} 

@@ -171,6 +171,15 @@ class ControllerProductCategory extends Controller {
 
 				if ($this->customer->isLogged() || !$this->config->get('config_customer_price')) {
 					$price = $this->currency->format($this->tax->calculate($result['price'], $result['tax_class_id'], $this->config->get('config_tax')), $this->session->data['currency']);
+					$customer_id = $this->customer->getId();					
+					if($result['ean'] != ""){
+						$imported_price = $this->model_catalog_product->getImportedProduct($customer_id, $result['ean']);
+						if(isset($imported_price)){
+							$price = $this->currency->format($this->tax->calculate($imported_price['price'], $result['tax_class_id'], $this->config->get('config_tax') ? 'P' : false), $this->session->data['currency']);
+							$data['price'] = $price;
+							$result['price'] = $imported_price['price'];
+						}
+					}
 				} else {
 					$price = false;
 				}

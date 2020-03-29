@@ -536,4 +536,10 @@ class ModelCatalogProduct extends Model {
 			return 0;
 		}
 	}
+
+	public function getImportedProduct($customer_id, $ean){
+		$query = $this->db->query("SELECT price FROM " . DB_PREFIX . "imported_product WHERE customer_id = '" . (int)$customer_id . "' AND ean = '" . (int)$ean . "'");
+
+		return $query->row;
+	}
 }

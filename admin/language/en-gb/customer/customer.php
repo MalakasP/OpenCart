@@ -23,7 +23,9 @@ $_['text_transaction']          = 'Transactions';
 $_['text_transaction_add']      = 'Add Transaction';
 $_['text_reward']               = 'Reward Points';
 $_['text_reward_add']           = 'Add Reward Points';
+$_['text_import_edit']          = 'Edit Imported Product Information';
 $_['text_ip']                   = 'IP';
+$_['text_import']               = 'Special price list for a customer';
 $_['text_option']               = 'Options';
 $_['text_login']                = 'Login into Store';
 $_['text_unlock']               = 'Unlock Account';
@@ -41,6 +43,10 @@ $_['column_points']             = 'Points';
 $_['column_ip']                 = 'IP';
 $_['column_total']              = 'Total Accounts';
 $_['column_action']             = 'Action';
+$_['column_product']            = 'Product Name';
+$_['column_product_code']       = 'Product EAN Code';
+$_['column_price']              = 'Special Price (EUR)';
+
 
 // Entry
 $_['entry_customer_group']      = 'Customer Group';
@@ -77,9 +83,12 @@ $_['entry_bank_account_name']   = 'Account Name';
 $_['entry_bank_account_number'] = 'Account Number';
 $_['entry_comment']             = 'Comment';
 $_['entry_description']         = 'Description';
+$_['entry_ean']                 = 'EAN Code';
+$_['entry_price']               = 'Special Price (EUR)';
 $_['entry_amount']              = 'Amount';
 $_['entry_points']              = 'Points';
 $_['entry_name']                = 'Customer Name';
+$_['entry_product_name']        = 'Name';
 $_['entry_ip']                  = 'IP';
 $_['entry_date_added']          = 'Date Added';
 
@@ -89,6 +98,7 @@ $_['help_affiliate']            = 'Enable / Disable the customers ability to use
 $_['help_tracking']             = 'The tracking code that will be used to track referrals.';
 $_['help_commission']           = 'Percentage the affiliate receives on each order.';
 $_['help_points']               = 'Use minus to remove points';
+$_['help_ean']                  = 'European Article Number';
 
 // Error
 $_['error_warning']             = 'Warning: Please check the form carefully for errors!';

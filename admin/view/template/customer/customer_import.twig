@@ -1,0 +1,75 @@
+{{ header }}
+<div class="table-responsive">
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr>
+        <td class="text-right">{{ column_product }}</td>
+        <td class="text-right">{{ column_product_code }}</td>
+        <td class="text-right">{{ column_price}}</td>
+        <td class="text-right">{{ column_date_added }}</td>
+        <td class="text-right">{{ column_action }}</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% if imports %}
+      {% for imp in imports %}
+      <tr>
+        <td class="text-right"><a href="index.php?route=catalog/product/edit&user_token={{ user_token }}&product_id={{ imp.product_id }}" target="_blank">{{ imp.product_name }}</a></td>
+        <td class="text-right">{{ imp.product_code }}</td>
+        <td class="text-right">{{ imp.product_price }}</td>
+        <td class="text-right">{{ imp.date_added }}</a></td>
+        <td class="text-right">
+        <button type="button" data-toggle="tooltip" title="{{ button_edit }}" class="btn btn-primary" onclick="editProduct({{ imp.imp_product_id }});"><i class="fa fa-pencil"></i></button>
+        <button type="button" data-toggle="tooltip" title="{{ button_delete }}" class="btn btn-danger" onclick="deleteProduct({{ imp.product_code }});"><i class="fa fa-trash-o"></i></button> </td></tr>
+      {% endfor %}
+      {% else %}
+      <tr>
+        <td class="text-center" colspan="5">{{ text_no_results }}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <script type="text/javascript"><!--
+
+  function deleteProduct(ean){
+    var conf = confirm('{{ text_confirm }}');
+    if (conf){
+        $.ajax({
+        url: 'index.php?route=customer/customer/deleteImport&user_token={{ user_token }}&customer_id={{ customer_id }}',
+        type: 'post',
+        data: { "ean" : ean },
+        datatype: 'json',
+        success: function(json) {
+          $('.alert-dismissible').remove();
+          if (json['error']) {
+            $('#tab-import').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> ' + json['error'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+            console.log(json['error'])
+          }
+
+          if (json['success']) {
+            console.log(json['success'])
+            $('#tab-import').prepend('<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> ' + json['success'] + ' <button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+
+            $('#import').load('index.php?route=customer/customer/import&user_token={{ user_token }}&customer_id={{ customer_id }}');
+          }
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+            alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+          }
+        });
+    } else {
+      console.log("cancel");
+    }
+  }
+
+  function editProduct(id){
+    $('#import').load('index.php?route=customer/customer/editImport&user_token={{ user_token }}&customer_id={{ customer_id }}&product_id=' + id);
+  }
+
+
+  //--></script>
+</div>
+<div class="row">
+  <div class="col-sm-6 text-left">{{ pagination }}</div>
+  <div class="col-sm-6 text-right">{{ results }}</div>
+</div>

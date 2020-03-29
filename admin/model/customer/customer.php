@@ -474,6 +474,47 @@ class ModelCustomerCustomer extends Model {
 		return $query->row['total'];
 	}
 
+	public function addImport($customer_id, $username, $product) {
+		$this->db->query("INSERT INTO " . DB_PREFIX . "imported_product SET ean = '" . (int)$product['ean'] . "', price = '" . $product['price'] . "', date_added = NOW(), username = '" . $username . "', customer_id = '" . (int)$customer_id ."'");
+	}
+
+	public function deleteImports($customer_id) {
+		$this->db->query("DELETE FROM " . DB_PREFIX . "imported_product WHERE customer_id = '" . (int)$customer_id . "'");
+	}
+	
+	public function deleteImport($customer_id, $ean){
+		$this->db->query("DELETE FROM " . DB_PREFIX . "imported_product WHERE customer_id = '" . (int)$customer_id . "' AND ean = '" . (int)$ean . "'");
+	}
+
+	public function updateImport($id, $ean, $price, $username){
+		$this->db->query("UPDATE " . DB_PREFIX . "imported_product SET ean = '" . (int)$ean . "', price = '" . $price . "', date_added = NOW(), username = '" . $username . "' WHERE id = '" . (int)$id . "'");
+	}
+
+	public function getImportedProduct($id){
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "imported_product WHERE id = '" . (int)$id . "'");
+
+		return $query->row;
+	}
+
+	public function getImport($customer_id, $start = 0, $limit = 10) {
+		if ($start < 0) {
+			$start = 0;
+		}
+		if ($limit < 1) {
+			$limit = 10;
+		}
+		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "imported_product WHERE customer_id = '" . (int)$customer_id . "' ORDER BY date_added DESC LIMIT " . (int)$start . "," . (int)$limit);
+
+		return $query->rows;
+	}
+
+	public function getTotalImports($customer_id) {
+		$query = $this->db->query("SELECT COUNT(*) AS total FROM " . DB_PREFIX . "imported_product WHERE customer_id = '" . (int)$customer_id . "'");
+
+		return $query->row['total'];
+	}
+
+
 	public function getTotalLoginAttempts($email) {
 		$query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "customer_login` WHERE `email` = '" . $this->db->escape($email) . "'");
 
